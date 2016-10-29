@@ -685,6 +685,7 @@ public class Calculator extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private String Compute(String text) {
+        /* Compute Module */
         return "Error";
     }
 }
