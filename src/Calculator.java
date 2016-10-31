@@ -1,6 +1,5 @@
 
 import javax.swing.JFrame;
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -61,7 +60,7 @@ public class Calculator extends javax.swing.JFrame {
         jButton0 = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
-        jMenuItem2 = new javax.swing.JMenuItem();
+        jMenuItemQuit = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -69,7 +68,6 @@ public class Calculator extends javax.swing.JFrame {
         setAlwaysOnTop(true);
         setResizable(false);
 
-        jTextFieldDisplay.setBackground(new java.awt.Color(255, 255, 255));
         jTextFieldDisplay.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
         jTextFieldDisplay.setForeground(new java.awt.Color(0, 0, 0));
         jTextFieldDisplay.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
@@ -445,8 +443,14 @@ public class Calculator extends javax.swing.JFrame {
 
         jMenu1.setText("View");
 
-        jMenuItem2.setText("jMenuItem2");
-        jMenu1.add(jMenuItem2);
+        jMenuItemQuit.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemQuit.setText("Quit");
+        jMenuItemQuit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemQuitActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItemQuit);
 
         jMenuBar1.add(jMenu1);
 
@@ -507,7 +511,7 @@ public class Calculator extends javax.swing.JFrame {
 
     private void jButtonPlusMinusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonPlusMinusActionPerformed
         // TODO add your handling code here:
-        jTextFieldDisplay.setText(jTextFieldDisplay.getText() + "-");
+        jTextFieldDisplay.setText(String.valueOf(eval("0-" + jTextFieldDisplay.getText())));
     }//GEN-LAST:event_jButtonPlusMinusActionPerformed
 
     private void jButtonRootActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRootActionPerformed
@@ -571,7 +575,7 @@ public class Calculator extends javax.swing.JFrame {
 
     private void jButtonEqualsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEqualsActionPerformed
         // TODO add your handling code here:
-        jTextFieldDisplay.setText(Compute(jTextFieldDisplay.getText()));
+        jTextFieldDisplay.setText(String.valueOf(eval(jTextFieldDisplay.getText())));
     }//GEN-LAST:event_jButtonEqualsActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
@@ -608,9 +612,95 @@ public class Calculator extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextFieldDisplayActionPerformed
 
+    private void jMenuItemQuitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemQuitActionPerformed
+        // TODO add your handling code here:
+        dispose();
+    }//GEN-LAST:event_jMenuItemQuitActionPerformed
+
     /**
      * @param args the command line arguments
      */
+    
+    public static double eval(final String str) {
+    return new Object() {
+        int pos = -1, ch;
+
+        void nextChar() {
+            ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+        }
+
+        boolean eat(int charToEat) {
+            while (ch == ' ') nextChar();
+            if (ch == charToEat) {
+                nextChar();
+                return true;
+            }
+            return false;
+        }
+
+        double parse() {
+            nextChar();
+            double x = parseExpression();
+            if (pos < str.length()) throw new RuntimeException("Unexpected: " + (char)ch);
+            return x;
+        }
+
+        // Grammar:
+        // expression = term | expression `+` term | expression `-` term
+        // term = factor | term `*` factor | term `/` factor
+        // factor = `+` factor | `-` factor | `(` expression `)`
+        //        | number | functionName factor | factor `^` factor
+
+        double parseExpression() {
+            double x = parseTerm();
+            for (;;) {
+                if      (eat('+')) x += parseTerm(); // addition
+                else if (eat('-')) x -= parseTerm(); // subtraction
+                else return x;
+            }
+        }
+
+        double parseTerm() {
+            double x = parseFactor();
+            for (;;) {
+                if      (eat('*')) x *= parseFactor(); // multiplication
+                else if (eat('/')) x /= parseFactor(); // division
+                else return x;
+            }
+        }
+
+        double parseFactor() {
+            if (eat('+')) return parseFactor(); // unary plus
+            if (eat('-')) return -parseFactor(); // unary minus
+
+            double x;
+            int startPos = this.pos;
+            if (eat('(')) { // parentheses
+                x = parseExpression();
+                eat(')');
+            } else if ((ch >= '0' && ch <= '9') || ch == '.') { // numbers
+                while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
+                x = Double.parseDouble(str.substring(startPos, this.pos));
+            } else if (ch >= 'a' && ch <= 'z') { // functions
+                while (ch >= 'a' && ch <= 'z') nextChar();
+                String func = str.substring(startPos, this.pos);
+                x = parseFactor();
+                if (func.equals("sqrt")) x = Math.sqrt(x);
+                else if (func.equals("sin")) x = Math.sin(Math.toRadians(x));
+                else if (func.equals("cos")) x = Math.cos(Math.toRadians(x));
+                else if (func.equals("tan")) x = Math.tan(Math.toRadians(x));
+                else throw new RuntimeException("Unknown function: " + func);
+            } else {
+                throw new RuntimeException("Unexpected: " + (char)ch);
+            }
+
+            if (eat('^')) x = Math.pow(x, parseFactor()); // exponentiation
+
+            return x;
+        }
+    }.parse();
+}
+    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -675,13 +765,9 @@ public class Calculator extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItemQuit;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JTextField jTextFieldDisplay;
     // End of variables declaration//GEN-END:variables
 
-    private String Compute(String text) {
-        /* Compute Module */
-        return "Error";
-    }
 }
