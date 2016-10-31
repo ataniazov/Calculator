@@ -575,7 +575,12 @@ public class Calculator extends javax.swing.JFrame {
 
     private void jButtonEqualsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEqualsActionPerformed
         // TODO add your handling code here:
-        jTextFieldDisplay.setText(String.valueOf(eval(jTextFieldDisplay.getText())));
+        double answer = eval(jTextFieldDisplay.getText());
+        if(Math.floor(answer) == answer) {
+            jTextFieldDisplay.setText(String.valueOf((int)answer));
+        } else {
+            jTextFieldDisplay.setText(String.valueOf(answer));
+        }
     }//GEN-LAST:event_jButtonEqualsActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
